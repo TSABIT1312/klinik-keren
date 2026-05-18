@@ -157,7 +157,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@klinik.kampus.id"
+                  placeholder="Email anda"
                   className="input-field pl-10"
                   required
                 />
