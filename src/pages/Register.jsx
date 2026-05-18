@@ -43,7 +43,7 @@ export default function Register() {
     }
 
     setLoading(true)
-    const { error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
     setLoading(false)
 
     if (signUpError) {
@@ -52,6 +52,8 @@ export default function Register() {
       } else {
         setError('Terjadi kesalahan. Silakan coba lagi.')
       }
+    } else if (data.session) {
+      navigate('/', { replace: true })
     } else {
       setSuccess(true)
     }
