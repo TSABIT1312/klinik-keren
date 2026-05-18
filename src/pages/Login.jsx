@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight,
@@ -221,8 +221,15 @@ export default function Login() {
             </button>
           </form>
 
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Belum punya akun?{' '}
+            <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+              Daftar sekarang
+            </Link>
+          </p>
+
           {/* Trust badges */}
-          <div className="mt-8 flex items-center justify-center gap-4 border-t border-gray-100 pt-6">
+          <div className="mt-6 flex items-center justify-center gap-4 border-t border-gray-100 pt-6">
             {['SSL Terenkripsi', 'Data Aman', 'BSSN Compliant'].map(t => (
               <div key={t} className="flex items-center gap-1 text-[11px] text-gray-400">
                 <CheckCircle size={11} className="text-success-400" />
