@@ -1,14 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Star, ChevronLeft, ChevronRight, Check,
-  Calendar, Clock, User, FileText, CheckCircle, X, RefreshCw, ChevronDown,
+  Calendar, Clock, User, FileText, CheckCircle, X, RefreshCw, ChevronDown, Search,
 } from 'lucide-react'
 import { useDokter } from '../hooks/useDokter'
 import { useBooking } from '../hooks/useBooking'
 import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
-import MahasiswaPicker from '../components/ui/MahasiswaPicker'
+import { fetchPasien } from '../services/pasienService'
 
 const MONTHS = [
   'Januari','Februari','Maret','April','Mei','Juni',
@@ -80,6 +80,141 @@ function DocCardSkeleton() {
           <div className="h-3 w-20 rounded bg-gray-100" />
         </div>
       </div>
+    </div>
+  )
+}
+
+const statusLabel = { aktif: 'Aktif', menunggu: 'Menunggu', selesai: 'Selesai', kritis: 'Kritis' }
+const statusColor  = { aktif: 'bg-blue-100 text-blue-700', menunggu: 'bg-yellow-100 text-yellow-700', selesai: 'bg-green-100 text-green-700', kritis: 'bg-red-100 text-red-700' }
+
+function PasienPicker({ picked, onSelect, onClear }) {
+  const [allPasien, setAll]   = useState([])
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen]       = useState(false)
+  const [query, setQuery]     = useState('')
+  const wrapperRef            = useRef(null)
+  const searchRef             = useRef(null)
+
+  function openDropdown() {
+    setOpen(true)
+    setTimeout(() => searchRef.current?.focus(), 50)
+    if (allPasien.length > 0) return
+    setLoading(true)
+    fetchPasien({})
+      .then(data => setAll(Array.isArray(data) ? data : []))
+      .catch(() => setAll([]))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false); setQuery('')
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return allPasien
+    const q = query.toLowerCase()
+    return allPasien.filter(p =>
+      p.name.toLowerCase().includes(q) || p.nim.toLowerCase().includes(q)
+    )
+  }, [allPasien, query])
+
+  function pick(p) { onSelect(p); setOpen(false); setQuery('') }
+
+  if (picked) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3">
+        <Avatar name={picked.name} size="sm" />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 text-sm truncate">{picked.name}</p>
+          <p className="text-[11px] text-gray-500">{picked.nim} · {picked.layanan}</p>
+          {picked.keluhan && (
+            <p className="text-[11px] text-gray-400 truncate mt-0.5">"{picked.keluhan}"</p>
+          )}
+        </div>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor[picked.status] ?? 'bg-gray-100 text-gray-600'}`}>
+          {statusLabel[picked.status] ?? picked.status}
+        </span>
+        {onClear && (
+          <button type="button" onClick={onClear}
+            className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-white hover:text-gray-600 transition-colors">
+            <X size={14} />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button type="button" onClick={openDropdown}
+        className="input-field flex w-full items-center justify-between gap-2 text-left">
+        <span className="flex items-center gap-2 text-gray-400">
+          <User size={14} />
+          <span className="text-sm">Pilih pasien terdaftar...</span>
+        </span>
+        <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}
+            className="absolute z-50 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-modal overflow-hidden"
+          >
+            <div className="border-b border-gray-100 p-2">
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input ref={searchRef} type="text" value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Cari nama atau NIM..."
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-8 pr-3 text-sm outline-none focus:border-primary-400 focus:bg-white"
+                />
+              </div>
+            </div>
+            <ul className="max-h-60 overflow-y-auto py-1">
+              {loading ? (
+                <li className="flex items-center justify-center gap-2 py-6 text-sm text-gray-400">
+                  <RefreshCw size={14} className="animate-spin" /> Memuat data pasien...
+                </li>
+              ) : filtered.length === 0 ? (
+                <li className="py-6 text-center text-sm text-gray-400">
+                  {query ? 'Pasien tidak ditemukan' : 'Belum ada pasien terdaftar'}
+                </li>
+              ) : filtered.map(p => (
+                <li key={p.id}>
+                  <button type="button" onMouseDown={() => pick(p)}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-primary-50 transition-colors"
+                  >
+                    <Avatar name={p.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900">{p.name}</p>
+                      <p className="text-[11px] text-gray-400">{p.nim} · {p.layanan}</p>
+                      {p.keluhan && (
+                        <p className="text-[11px] text-gray-300 truncate">"{p.keluhan}"</p>
+                      )}
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor[p.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {statusLabel[p.status] ?? p.status}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {!loading && allPasien.length > 0 && (
+              <div className="border-t border-gray-100 px-3 py-2 text-[11px] text-gray-400">
+                {filtered.length} dari {allPasien.length} pasien terdaftar
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -340,26 +475,24 @@ export default function Booking() {
                   </div>
                 )}
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    Mahasiswa *
-                  </label>
-                  <MahasiswaPicker
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-700">Pasien *</label>
+                  <PasienPicker
                     picked={pickedMhs}
-                    onSelect={m => {
-                      setPickedMhs(m)
-                      setForm(f => ({ ...f, name: m.nama, nim: m.nim }))
+                    onSelect={p => {
+                      setPickedMhs(p)
+                      setForm(f => ({ ...f, name: p.name, nim: p.nim, keluhan: p.keluhan ?? '' }))
                     }}
                     onClear={() => {
                       setPickedMhs(null)
-                      setForm(f => ({ ...f, name: '', nim: '' }))
+                      setForm(f => ({ ...f, name: '', nim: '', keluhan: '' }))
                     }}
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-700">Keluhan (opsional)</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-700">Keluhan</label>
                   <textarea className="input-field resize-none" rows={3} value={form.keluhan}
                     onChange={e => setForm(f => ({ ...f, keluhan: e.target.value }))}
-                    placeholder="Ceritakan keluhan secara singkat..." />
+                    placeholder="Keluhan pasien..." />
                 </div>
                 <div className="flex justify-between pt-2">
                   <button type="button" onClick={() => setStep(2)} className="btn-secondary">
