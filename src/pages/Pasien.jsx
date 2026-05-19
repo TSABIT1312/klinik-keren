@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, Pencil, Trash2, X,
   ChevronLeft, ChevronRight, AlertCircle, RefreshCw,
-  GraduationCap,
+  GraduationCap, CheckCircle2,
 } from 'lucide-react'
 import { usePasien } from '../hooks/usePasien'
 import Badge from '../components/ui/Badge'
@@ -52,6 +52,7 @@ export default function Pasien() {
   const [saving, setSaving]       = useState(false)
   const [formError, setFormError] = useState('')
   const [pickedMhs, setPickedMhs] = useState(null)
+  const [completing, setCompleting] = useState(null)
 
   const { data, loading, error, add, edit, remove } = usePasien({ search, status: statusFilter })
 
@@ -81,6 +82,11 @@ export default function Pasien() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function markSelesai(id) {
+    setCompleting(id)
+    try { await edit(id, { status: 'selesai' }) } finally { setCompleting(null) }
   }
 
   async function confirmDelete() {
@@ -193,6 +199,18 @@ export default function Pasien() {
                   <td className="px-4 py-3"><Badge variant={p.status}>{statusLabel[p.status]}</Badge></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {p.status === 'aktif' && (
+                        <button
+                          onClick={() => markSelesai(p.id)}
+                          disabled={completing === p.id}
+                          title="Tandai Selesai"
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-green-50 hover:text-green-600 transition-colors disabled:opacity-50"
+                        >
+                          {completing === p.id
+                            ? <RefreshCw size={14} className="animate-spin" />
+                            : <CheckCircle2 size={14} />}
+                        </button>
+                      )}
                       <button onClick={() => openEdit(p)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-primary-50 hover:text-primary-600 transition-colors">
                         <Pencil size={14} />
