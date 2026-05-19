@@ -8,7 +8,7 @@ import { useDokter } from '../hooks/useDokter'
 import { useBooking } from '../hooks/useBooking'
 import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
-import { fetchPasien } from '../services/pasienService'
+import { fetchPasien, updatePasien } from '../services/pasienService'
 
 const MONTHS = [
   'Januari','Februari','Maret','April','Mei','Juni',
@@ -267,6 +267,7 @@ export default function Booking() {
         keluhan:     form.keluhan,
         status:      'menunggu',
       })
+      if (pickedMhs?.id) await updatePasien(pickedMhs.id, { status: 'aktif' })
       setSuccess(true)
     } catch (err) {
       setError(err.message)
@@ -456,12 +457,15 @@ export default function Booking() {
                   { icon: Calendar, label: 'Tanggal', value: dateLabel },
                   { icon: Clock,    label: 'Waktu',   value: selectedTime },
                   { icon: FileText, label: 'Layanan', value: selectedDoc?.specialty },
+                  { icon: FileText, label: 'Keluhan', value: form.keluhan || null },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-start gap-3 rounded-xl bg-gray-50 px-4 py-3">
                     <Icon size={16} className="mt-0.5 text-primary-500 shrink-0" strokeWidth={1.75} />
                     <div>
                       <p className="text-[11px] text-gray-400">{label}</p>
-                      <p className="text-sm font-semibold text-gray-800 mt-0.5">{value ?? '—'}</p>
+                      <p className={`text-sm mt-0.5 ${value ? 'font-semibold text-gray-800' : 'italic text-gray-400'}`}>
+                        {value ?? 'Tidak ada keluhan'}
+                      </p>
                     </div>
                   </div>
                 ))}
