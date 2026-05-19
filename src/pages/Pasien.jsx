@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, Pencil, Trash2, X,
   ChevronLeft, ChevronRight, AlertCircle, RefreshCw,
+  GraduationCap,
 } from 'lucide-react'
 import { usePasien } from '../hooks/usePasien'
 import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
+import MahasiswaPicker from '../components/ui/MahasiswaPicker'
 
 const LAYANAN  = ['Konsultasi Umum', 'Kesehatan Gigi', 'Psikologi & Konseling', 'Pemeriksaan Lab']
 const STATUSES = ['semua', 'aktif', 'menunggu', 'selesai', 'kritis']
@@ -49,6 +51,7 @@ export default function Pasien() {
   const [deleteId, setDeleteId]   = useState(null)
   const [saving, setSaving]       = useState(false)
   const [formError, setFormError] = useState('')
+  const [pickedMhs, setPickedMhs] = useState(null)
 
   const { data, loading, error, add, edit, remove } = usePasien({ search, status: statusFilter })
 
@@ -57,14 +60,14 @@ export default function Pasien() {
   const paginated   = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   function openAdd() {
-    setForm(emptyForm); setEditId(null); setFormError(''); setModal('add')
+    setForm(emptyForm); setEditId(null); setFormError(''); setPickedMhs(null); setModal('add')
   }
   function openEdit(p) {
     setForm({ name: p.name, nim: p.nim, hp: p.hp ?? '', layanan: p.layanan, tanggal: p.tanggal, status: p.status, keluhan: p.keluhan ?? '' })
     setEditId(p.id); setFormError(''); setModal('edit')
   }
   function openDelete(id) { setDeleteId(id); setModal('delete') }
-  function closeModal()   { setModal(null); setEditId(null); setDeleteId(null) }
+  function closeModal()   { setModal(null); setEditId(null); setDeleteId(null); setPickedMhs(null) }
 
   async function saveForm(e) {
     e.preventDefault()
@@ -254,25 +257,66 @@ export default function Pasien() {
                     <AlertCircle size={14} />{formError}
                   </div>
                 )}
+
+                {/* === Hanya tampil di mode Tambah: picker mahasiswa SIPRO === */}
+                {modal === 'add' && (
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                      <GraduationCap size={13} className="text-primary-500" />
+                      Pilih Mahasiswa dari SIPRO *
+                    </label>
+                    {pickedMhs ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-success-400 text-xs font-bold text-white">
+                          {pickedMhs.nama.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">{pickedMhs.nama}</p>
+                          <p className="text-[11px] text-gray-500">{pickedMhs.nim} · {pickedMhs.prodi || '—'}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setPickedMhs(null); setForm(f => ({ ...f, name: '', nim: '', hp: '' })) }}
+                          className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-white hover:text-gray-600 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <MahasiswaPicker onSelect={m => {
+                        setPickedMhs(m)
+                        setForm(f => ({ ...f, name: m.nama, nim: m.nim, hp: m.no_hp || '' }))
+                      }} />
+                    )}
+                  </div>
+                )}
+
+                {/* === Edit mode: tampil field nama & NIM seperti biasa === */}
+                {modal === 'edit' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <label className="mb-1.5 block text-xs font-semibold text-gray-700">Nama Lengkap *</label>
+                      <input className="input-field" required value={form.name}
+                        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder="Nama lengkap pasien" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-gray-700">NIM / NPM *</label>
+                      <input className="input-field font-mono" required value={form.nim}
+                        onChange={e => setForm(f => ({ ...f, nim: e.target.value }))}
+                        placeholder="2021050123" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-gray-700">No. HP</label>
+                      <input className="input-field" value={form.hp}
+                        onChange={e => setForm(f => ({ ...f, hp: e.target.value }))}
+                        placeholder="08xxxxxxxxxx" />
+                    </div>
+                  </div>
+                )}
+
+                {/* === Field bersama (layanan, status, tanggal, keluhan) === */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="mb-1.5 block text-xs font-semibold text-gray-700">Nama Lengkap *</label>
-                    <input className="input-field" required value={form.name}
-                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      placeholder="Nama lengkap pasien" />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-gray-700">NIM / NPM *</label>
-                    <input className="input-field font-mono" required value={form.nim}
-                      onChange={e => setForm(f => ({ ...f, nim: e.target.value }))}
-                      placeholder="2021050123" />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-gray-700">No. HP</label>
-                    <input className="input-field" value={form.hp}
-                      onChange={e => setForm(f => ({ ...f, hp: e.target.value }))}
-                      placeholder="08xxxxxxxxxx" />
-                  </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold text-gray-700">Layanan *</label>
                     <select className="input-field" value={form.layanan}
@@ -289,7 +333,7 @@ export default function Pasien() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal *</label>
                     <input type="date" className="input-field" required value={form.tanggal}
                       onChange={e => setForm(f => ({ ...f, tanggal: e.target.value }))} />
@@ -301,9 +345,14 @@ export default function Pasien() {
                       placeholder="Deskripsikan keluhan pasien..." />
                   </div>
                 </div>
+
                 <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
                   <button type="button" onClick={closeModal} className="btn-secondary">Batal</button>
-                  <button type="submit" disabled={saving} className="btn-primary disabled:opacity-70">
+                  <button
+                    type="submit"
+                    disabled={saving || (modal === 'add' && !pickedMhs)}
+                    className="btn-primary disabled:opacity-70"
+                  >
                     {saving ? <RefreshCw size={14} className="animate-spin" /> : null}
                     {modal === 'add' ? 'Tambah Pasien' : 'Simpan Perubahan'}
                   </button>

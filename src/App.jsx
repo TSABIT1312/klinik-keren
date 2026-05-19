@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, ProtectedRoute } from './lib/AuthContext'
 import DashboardLayout from './components/layout/DashboardLayout'
-import Login      from './pages/Login'
-import Register   from './pages/Register'
-import Dashboard  from './pages/Dashboard'
-import Pasien     from './pages/Pasien'
-import Booking    from './pages/Booking'
-import RekamMedis from './pages/RekamMedis'
+import Login           from './pages/Login'
+import Register        from './pages/Register'
+import Dashboard       from './pages/Dashboard'
+import Pasien          from './pages/Pasien'
+import Booking         from './pages/Booking'
+import RekamMedis      from './pages/RekamMedis'
 
 export default function App() {
   return (

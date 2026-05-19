@@ -6,10 +6,10 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/',           icon: LayoutDashboard, label: 'Dashboard',         end: true },
-  { to: '/pasien',     icon: Users,           label: 'Data Pasien',       end: false },
-  { to: '/booking',    icon: Calendar,        label: 'Booking',           end: false },
-  { to: '/rekam-medis',icon: FileText,        label: 'Rekam Medis',       end: false },
+  { to: '/',            icon: LayoutDashboard, label: 'Dashboard',   end: true },
+  { to: '/pasien',      icon: Users,           label: 'Data Pasien', end: false },
+  { to: '/booking',     icon: Calendar,        label: 'Booking',     end: false },
+  { to: '/rekam-medis', icon: FileText,        label: 'Rekam Medis', end: false },
 ]
 
 function NavItem({ to, icon: Icon, label, end, onClick }) {

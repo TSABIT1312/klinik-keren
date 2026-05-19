@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Star, ChevronLeft, ChevronRight, Check,
-  Calendar, Clock, User, FileText, CheckCircle, X, RefreshCw,
+  Calendar, Clock, User, FileText, CheckCircle, X, RefreshCw, ChevronDown,
 } from 'lucide-react'
 import { useDokter } from '../hooks/useDokter'
 import { useBooking } from '../hooks/useBooking'
 import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
+import MahasiswaPicker from '../components/ui/MahasiswaPicker'
 
 const MONTHS = [
   'Januari','Februari','Maret','April','Mei','Juni',
@@ -90,6 +91,7 @@ export default function Booking() {
   const [selectedTime, setTime]     = useState(null)
   const [calDate, setCalDate]       = useState(new Date())
   const [form, setForm]             = useState({ name: '', nim: '', keluhan: '' })
+  const [pickedMhs, setPickedMhs]   = useState(null)
   const [showSuccess, setSuccess]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setError]     = useState('')
@@ -140,7 +142,7 @@ export default function Booking() {
 
   function reset() {
     setStep(1); setDocId(null); setDate(null); setTime(null)
-    setForm({ name: '', nim: '', keluhan: '' }); setSuccess(false); setError('')
+    setForm({ name: '', nim: '', keluhan: '' }); setPickedMhs(null); setSuccess(false); setError('')
   }
 
   const dateLabel = tanggalStr
@@ -162,33 +164,46 @@ export default function Booking() {
         {/* ── Step 1 ── */}
         {step === 1 && (
           <motion.div key="s1" variants={fade} initial="hidden" animate="visible" exit="hidden">
-            <h2 className="mb-4 text-sm font-semibold text-gray-700">Pilih Dokter</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {loadDoctors ? Array(4).fill(0).map((_, i) => <DocCardSkeleton key={i} />) :
-                doctors.map(doc => (
-                  <button key={doc.id} onClick={() => { setDocId(doc.id); setStep(2) }}
-                    className={`card text-left transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 ${
-                      selectedDocId === doc.id ? 'ring-2 ring-primary-400' : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <Avatar name={doc.name} size="lg" />
+            <div className="card max-w-lg mx-auto space-y-5">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Pilih Dokter</h2>
+                <p className="mt-0.5 text-xs text-gray-400">Pilih tenaga medis yang ingin dikonsultasikan</p>
+              </div>
+
+              {loadDoctors ? (
+                <div className="space-y-3">
+                  {Array(3).fill(0).map((_, i) => (
+                    <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-100" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {doctors.map(doc => (
+                    <button
+                      key={doc.id}
+                      onClick={() => { setDocId(doc.id); setStep(2) }}
+                      className={`flex w-full items-center gap-4 rounded-xl border px-4 py-3.5 text-left transition-all duration-150 hover:border-primary-300 hover:bg-primary-50 ${
+                        selectedDocId === doc.id
+                          ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <Avatar name={doc.name} size="md" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-gray-900 text-sm leading-snug">{doc.name}</p>
+                        <p className="font-semibold text-gray-900 text-sm truncate">{doc.name}</p>
                         <p className="text-xs text-gray-500 mt-0.5">{doc.specialty}</p>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Stars rating={doc.rating} />
-                          <span className="text-xs font-semibold text-gray-700">{doc.rating}</span>
-                          <span className="text-xs text-gray-400">({doc.reviews_count} ulasan)</span>
-                        </div>
-                        <div className="mt-3">
-                          <Badge variant="success">Tersedia</Badge>
-                        </div>
                       </div>
-                    </div>
-                  </button>
-                ))
-              }
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <div className="flex items-center gap-1">
+                          <Stars rating={doc.rating} />
+                          <span className="text-xs font-semibold text-gray-600">{doc.rating}</span>
+                        </div>
+                        <Badge variant="success">Tersedia</Badge>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -325,28 +340,32 @@ export default function Booking() {
                   </div>
                 )}
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-700">Nama Lengkap *</label>
-                  <input className="input-field" required value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="Nama sesuai KTM" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-700">NIM / NPM *</label>
-                  <input className="input-field font-mono" required value={form.nim}
-                    onChange={e => setForm(f => ({ ...f, nim: e.target.value }))}
-                    placeholder="2021050123" />
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    Mahasiswa *
+                  </label>
+                  <MahasiswaPicker
+                    picked={pickedMhs}
+                    onSelect={m => {
+                      setPickedMhs(m)
+                      setForm(f => ({ ...f, name: m.nama, nim: m.nim }))
+                    }}
+                    onClear={() => {
+                      setPickedMhs(null)
+                      setForm(f => ({ ...f, name: '', nim: '' }))
+                    }}
+                  />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-gray-700">Keluhan (opsional)</label>
                   <textarea className="input-field resize-none" rows={3} value={form.keluhan}
                     onChange={e => setForm(f => ({ ...f, keluhan: e.target.value }))}
-                    placeholder="Ceritakan keluhan Anda secara singkat..." />
+                    placeholder="Ceritakan keluhan secara singkat..." />
                 </div>
                 <div className="flex justify-between pt-2">
                   <button type="button" onClick={() => setStep(2)} className="btn-secondary">
                     <ChevronLeft size={15} />Kembali
                   </button>
-                  <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-70">
+                  <button type="submit" disabled={submitting || !pickedMhs} className="btn-primary disabled:opacity-70">
                     {submitting ? <RefreshCw size={14} className="animate-spin" /> : <Check size={15} />}
                     Konfirmasi Booking
                   </button>

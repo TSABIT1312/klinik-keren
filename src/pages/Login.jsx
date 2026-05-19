@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight,
@@ -136,8 +136,12 @@ export default function Login() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Selamat datang kembali</h2>
-            <p className="mt-1 text-sm text-gray-500">Masuk untuk mengakses sistem klinik</p>
+            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-[11px] font-semibold text-primary-700 ring-1 ring-primary-100">
+              <Shield size={11} />
+              Khusus Staff Klinik
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Portal Staff Klinik</h2>
+            <p className="mt-1 text-sm text-gray-500">Masukkan kredensial staff untuk mengakses sistem</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,11 +225,8 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Belum punya akun?{' '}
-            <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-              Daftar sekarang
-            </Link>
+          <p className="mt-6 text-center text-xs text-gray-400">
+            Akun dibuat oleh administrator klinik. Hubungi admin jika lupa password.
           </p>
 
           {/* Trust badges */}
